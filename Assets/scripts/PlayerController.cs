@@ -3,23 +3,42 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour {
-	private float gravity = 1;
+	public float gravity = -0.5f;
+    public float terminalVelocity = -2f;
 	public float runSpeed = 8f;
     public float jumpHeight = 3f;
-    public float groundAcceleration = 0.1f;
-    public float airAcceleration = 0.2f;
-    public float smoothVelocity = 0f;
-    
-    private Transform transform;
+
+    private Vector3 velocity;
 
 	// Use this for initialization
 	void Start () {
-        transform = gameObject.transform;
+        velocity = new Vector3(0, 0, 0);
+        // gameObject.GetComponent(typeof(BoxCollider2D)).
     }
 	
 	// Update is called once per frame
 	void Update () {
         Vector3 position = transform.position;
-        gameObject.transform.position = new Vector3(position.x, position.y - gravity * Time.deltaTime, position.z);
-	}
+
+        RaycastHit2D raycastHit = Physics2D.Raycast(new Vector2(position.x, position.y), Vector2.down, -terminalVelocity + 0.25f, LayerMask.GetMask("Ground"));
+        bool grounded = raycastHit.collider != null && raycastHit.distance <= 0.25f;
+
+        if (!grounded)
+        {
+            velocity.y = Mathf.Max(velocity.y + gravity, terminalVelocity);
+        }
+        else
+        {
+            velocity.y = 0;
+        }
+
+        Vector3 movement = velocity * Time.deltaTime;
+        if(raycastHit.collider != null)
+        {
+            movement.y = Mathf.Max(movement.y, -raycastHit.distance);
+        }
+        
+
+        gameObject.transform.position += movement;
+    }
 }
