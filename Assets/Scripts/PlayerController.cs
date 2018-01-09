@@ -5,24 +5,29 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour {
 	public float gravity = -0.5f;
     public float terminalVelocity = -2f;
-	public float runSpeed = 8f;
+	public float runSpeed = 1f;
     public float jumpHeight = 3f;
 
     private Vector3 velocity;
+    private Vector3 scaleFacingLeft;
+    private Vector3 scaleFacingRight;
+    private float height;
 
 	// Use this for initialization
 	void Start () {
         velocity = new Vector3(0, 0, 0);
-        // gameObject.GetComponent(typeof(BoxCollider2D)).
+        scaleFacingLeft = new Vector3(-1, 1, 1);
+        scaleFacingRight = new Vector3(1, 1, 1);
+        height = ((BoxCollider2D) gameObject.GetComponent(typeof(BoxCollider2D))).bounds.size.y;
     }
 	
 	// Update is called once per frame
 	void Update () {
         Vector3 position = transform.position;
 
-        RaycastHit2D raycastHit = Physics2D.Raycast(new Vector2(position.x, position.y), Vector2.down, -terminalVelocity + 0.25f, LayerMask.GetMask("Ground"));
-        bool grounded = raycastHit.collider != null && raycastHit.distance <= 0.25f;
-
+        RaycastHit2D raycastHit = Physics2D.Raycast(new Vector2(position.x, position.y), Vector2.down, -terminalVelocity + height / 2, LayerMask.GetMask("Ground"));
+        bool grounded = raycastHit.collider != null && raycastHit.distance <= height / 2;
+ 
         if (!grounded)
         {
             velocity.y = Mathf.Max(velocity.y + gravity, terminalVelocity);
@@ -32,6 +37,8 @@ public class PlayerController : MonoBehaviour {
             velocity.y = 0;
         }
 
+        velocity.x = Input.GetAxis("Horizontal") * runSpeed;
+
         Vector3 movement = velocity * Time.deltaTime;
         if(raycastHit.collider != null)
         {
@@ -40,5 +47,15 @@ public class PlayerController : MonoBehaviour {
         
 
         gameObject.transform.position += movement;
+
+
+        if (velocity.x > 0)
+        {
+            transform.localScale = scaleFacingRight;
+        }
+        else if (velocity.x < 0)
+        {
+            transform.localScale = scaleFacingLeft;
+        }
     }
 }
