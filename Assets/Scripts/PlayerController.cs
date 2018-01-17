@@ -6,7 +6,7 @@ public class PlayerController : MonoBehaviour {
 	public float gravity = -0.5f;
     public float terminalVelocity = -2f;
 	public float runSpeed = 1f;
-    public float jumpHeight = 3f;
+    public float jumpVelocity = 10f;
 
     private Vector3 velocity;
     private Vector3 scaleFacingLeft;
@@ -27,8 +27,8 @@ public class PlayerController : MonoBehaviour {
 	void Update () {
         Vector2 position = new Vector3(transform.position.x, transform.position.y);
 
-        RaycastHit2D raycastHit = Physics2D.Raycast(position, Vector2.down, -terminalVelocity + height / 2, LayerMask.GetMask("Ground"));
-        bool grounded = raycastHit.collider != null && raycastHit.distance <= height / 2;
+        RaycastHit2D groundedRayCastHit = Physics2D.Raycast(position, Vector2.down, -terminalVelocity + height / 2, LayerMask.GetMask("Ground"));
+        bool grounded = groundedRayCastHit.collider != null && groundedRayCastHit.distance <= height / 2;
  
         if (!grounded)
         {
@@ -36,22 +36,36 @@ public class PlayerController : MonoBehaviour {
         }
         else
         {
-            velocity.y = 0;
+            velocity.y = Input.GetButtonDown("Jump") ? jumpVelocity : 0;
         }
 
         velocity.x = Input.GetAxis("Horizontal") * runSpeed;
 
         Vector3 movement = velocity * Time.deltaTime;
-        if(raycastHit.collider != null)
+        if(groundedRayCastHit.collider != null)
         {
-            movement.y = Mathf.Max(movement.y, -raycastHit.distance);
+            movement.y = Mathf.Max(movement.y, -groundedRayCastHit.distance + height / 2);
+        }
+        
+        if(movement.x != 0)
+        {
+            RaycastHit2D horizontalRayCast = Physics2D.Raycast(position, movement.x > 0 ? Vector2.right : Vector2.left, Mathf.Abs(movement.x) + width / 2, LayerMask.GetMask("Ground"));
+
+            if (horizontalRayCast.collider != null)
+            {
+                movement.x = movement.x > 0 ? Mathf.Min(movement.x, horizontalRayCast.distance - width / 2) : Mathf.Max(movement.x, -horizontalRayCast.distance + width / 2);
+            }
+
         }
 
-        RaycastHit2D horizontalRayCast = Physics2D.Raycast(position, movement.x > 0 ? Vector2.right : Vector2.left, Mathf.Abs(movement.x) + width / 2, LayerMask.GetMask("Ground"));
-
-        if (horizontalRayCast.collider != null)
+        if (movement.y > 0)
         {
-            movement.x = movement.x > 0 ? Mathf.Min(movement.x, horizontalRayCast.distance - width / 2) : Mathf.Max(movement.x, horizontalRayCast.distance - width / 2);
+            RaycastHit2D upwardRaycastHit = Physics2D.Raycast(position, Vector2.up, movement.y + height / 2, LayerMask.GetMask("Ground"));
+
+            if (upwardRaycastHit.collider != null)
+            {
+                movement.y = Mathf.Min(movement.y, upwardRaycastHit.distance - height / 2);
+            }
         }
 
         gameObject.transform.position += movement;
